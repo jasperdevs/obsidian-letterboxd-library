@@ -1,0 +1,10 @@
+{
+  "id": "letterboxd-library",
+  "name": "Letterboxd Library",
+  "version": "1.4.0",
+  "minAppVersion": "1.14.5",
+  "description": "Browse watched films, ratings and stats from Letterboxd.",
+  "author": "jasperdevs",
+  "isDesktopOnly": true,
+  "authorUrl": "https://github.com/jasperdevs"
+}

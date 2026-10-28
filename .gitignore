@@ -1,0 +1,8 @@
+node_modules/
+data.json
+.env
+.env.*
+*.zip
+*.csv
+.DS_Store
+coverage/
