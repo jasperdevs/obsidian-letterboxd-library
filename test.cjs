@@ -173,3 +173,10 @@ test('failed export clears its busy state and preserves the library',async()=>{
  const p=pluginFixture(),before=JSON.stringify(p.data);p.app={vault:{getAbstractFileByPath:()=>null,create:async()=>{throw new Error('disk full');}}};
  assert.equal(await p.exportLibrary(),null);assert.equal(p.exporting,false);assert.equal(JSON.stringify(p.data),before);
 });
+test('logged row labels show real dates and explicitly identify missing dates',()=>{
+ const {loggedLabel}=sandbox.module.exports.core;
+ assert.match(loggedLabel({loggedDate:'2026-10-28'}),/^Logged .*2026/);
+ assert.equal(loggedLabel({}), 'Logged date unavailable');
+ assert.equal(loggedLabel({loggedDate:'invalid'}),'Logged date unavailable');
+ assert.match(loggedLabel({loggedDate:'2026-10-28T12:00:00Z'}),/^Logged .*2026/);
+});

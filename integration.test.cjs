@@ -113,7 +113,7 @@ test('multi-page refresh reads all watched films, promotes recent logs, and keep
   const h=await loaded(), root=h.render();
   assert.equal(h.plugin.data.films.length,3); assert.equal(root.querySelector('[aria-label="Sort films"]').value,'logged');assert.equal(root.querySelector('[aria-label="Sort direction"]').value,'desc');
   assert.equal(root.querySelector('.lb-film-title').textContent,'Alpha');assert.equal(root.querySelectorAll('.lb-film').length,3);assert.equal(root.querySelector('.lb-overview'),null);
-  assert.equal(root.querySelectorAll('.lb-stat-value').length,0);assert.equal(root.querySelectorAll('.lb-poster img').length,3);
+  assert.equal(root.querySelectorAll('.lb-stat-value').length,0);assert.equal(root.querySelectorAll('.lb-poster img').length,3);assert.equal(root.querySelectorAll('.lb-film-logged').length,3);assert.match(root.querySelector('.lb-film-logged').textContent,/Logged .*2026/);
   const statsButton=[...root.querySelectorAll('button')].find(b=>b.textContent==='Stats');statsButton.click();
   assert.match(root.textContent,/Collection · 3 films/);assert.equal(root.querySelectorAll('.lb-format-legend').length,1);
   assert.equal(root.querySelectorAll('.lb-chart-panel').length,2);

@@ -86,3 +86,5 @@
   .letterboxd-library .lb-rating-facts { grid-template-columns:repeat(2,minmax(0,1fr)); }
   .letterboxd-library .lb-columns, .letterboxd-library .lb-film { grid-template-columns:minmax(0,1fr) 46px 44px; }
 }
+
+.letterboxd-library .lb-film-logged { color:var(--text-faint); font-size:var(--font-ui-smaller); line-height:1.4; margin-top:2px; }

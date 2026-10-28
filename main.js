@@ -120,6 +120,16 @@ function releaseLabel(film) {
   const date=releaseDate(film?.releaseDate);
   return date ? new Intl.DateTimeFormat(undefined,{day:'numeric',month:'short',year:'numeric',timeZone:'UTC'}).format(new Date(`${date}T00:00:00Z`)) : String(film?.year ?? '—');
 }
+function loggedLabel(film) {
+  const value=film.loggedDate;
+  if(!value)return 'Logged date unavailable';
+  const day=releaseDate(value);
+  const date=new Date(day ? `${day}T00:00:00Z` : value);
+  if(!Number.isFinite(date.getTime()))return 'Logged date unavailable';
+  const options={day:'numeric',month:'short',year:'numeric'};
+  if(day)options.timeZone='UTC';
+  return `Logged ${new Intl.DateTimeFormat(undefined,options).format(date)}`;
+}
 function libraryCsv(films) {
   const cell=value=>{
     let output=String(value ?? '');
@@ -394,6 +404,7 @@ class LibraryBlock extends MarkdownRenderChild {
         if(url) caption.createEl('a', { text: film.title, href: url, cls: 'lb-film-title', attr: { target: '_blank', rel: 'noopener noreferrer' } });
         else caption.createSpan({ text: film.title });
         caption.createDiv({ text: `${film.year}${Number.isInteger(film.runtime) ? ` · ${film.runtime} min` : ''}`, cls: 'lb-film-meta' });
+        caption.createDiv({text:loggedLabel(film),cls:'lb-film-logged',attr:{title:film.loggedDate || 'Import a Letterboxd export to fill older logged dates.'}});
         row.createSpan({ text: film.rating == null ? '—' : `${film.rating} ★`, cls: 'lb-rating', attr: { 'aria-label': film.rating == null ? 'Not rated by you' : `Your rating: ${film.rating} out of 5` } });
         row.createSpan({ text: film.average == null ? '—' : film.average.toFixed(2), cls: 'lb-rating lb-community', attr: { 'aria-label': film.average == null ? 'Letterboxd average unavailable' : `Letterboxd average: ${film.average.toFixed(2)} out of 5` } });
       }
@@ -628,4 +639,4 @@ module.exports = class LetterboxdLibrary extends Plugin {
     finally { this.syncing = false; this.progress = ''; this.redraw(); }
   }
 };
-module.exports.core = { select, text, kind, parseList, parseRuntime, parseCsv, watchedFromZip, zipEntry, exportData, parseMetadata, smallPoster, stats, filterFilms, validUsername, filmUrl, releaseDate, releaseLabel, libraryCsv, parseRecentLogs, LibraryBlock, validNotePath };
+module.exports.core = { select, text, kind, parseList, parseRuntime, parseCsv, watchedFromZip, zipEntry, exportData, parseMetadata, smallPoster, stats, filterFilms, validUsername, filmUrl, releaseDate, releaseLabel, libraryCsv, parseRecentLogs, LibraryBlock, validNotePath, loggedLabel };

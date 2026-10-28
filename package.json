@@ -1,12 +1,13 @@
 {
   "name": "obsidian-letterboxd-library",
-  "version": "1.4.0",
+  "version": "1.4.1",
   "private": true,
   "description": "Watched films, ratings and stats for Obsidian.",
   "license": "MIT",
   "scripts": {
     "test": "node --test test.cjs integration.test.cjs",
-    "check": "node --check main.js && npm test"
+    "check": "node --check main.js && npm test",
+    "build": "node --check main.js"
   },
   "engines": {
     "node": ">=22.22.2"
