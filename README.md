@@ -47,7 +47,7 @@ The plugin makes no background requests, uses no credentials or API keys, and do
 
 ## Development
 
-No runtime dependencies or transpilation step. `npm run build` copies the readable `src/main.js` to the release `main.js` byte-for-byte, without transpilation or minification. Run `npm ci` and `npm run check` to run unit and browser-DOM tests. Set `LETTERBOXD_EXPORT` to a local ZIP path to include export checks. jsdom is a development-only test dependency.
+No runtime dependencies or transpilation step. `npm run build` copies the readable `src/plugin.cjs` to the release `main.js` byte-for-byte, without transpilation or minification. Run `npm ci` and `npm run check` to run unit and browser-DOM tests. Set `LETTERBOXD_EXPORT` to a local ZIP path to include export checks. jsdom is a development-only test dependency.
 
 Code is licensed under MIT; see [LICENSE](LICENSE). Logo terms are described in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
 
