@@ -107,7 +107,7 @@ test('fresh install opens a generic note and public settings without internal AP
   const h=harness(); await h.plugin.onload(); await h.plugin.openNote(); const root=h.render();
   assert.equal(h.app.openedFile,'Letterboxd.md'); assert.equal(h.plugin.activeFilms().length,0); assert.match(root.textContent,/Set your Letterboxd username/);
   h.plugin.openSettings(); assert.match(h.app.modal.contentEl.textContent,/Refresh before copying/); assert.equal(h.app.modal.contentEl.querySelector('input[type=checkbox]').checked,true);
-  assert.doesNotMatch(h.app.modal.contentEl.textContent,/huckles|Jasper/);
+  assert.doesNotMatch(h.app.modal.contentEl.textContent,/reader_one|reader_two/);
 });
 test('multi-page refresh reads all watched films, promotes recent logs, and keeps the library free of stats', async () => {
   const h=await loaded(), root=h.render();

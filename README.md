@@ -19,7 +19,7 @@ Set your username in the plugin settings. Import a Letterboxd export ZIP from th
 ```
 ````
 
-The shareable package contains no account settings or film history.
+A Letterboxd public profile or a Letterboxd export is needed to populate a library. The plugin never asks for your Letterboxd password. The shareable package contains no account settings or film history.
 
 ## Import and refresh
 
