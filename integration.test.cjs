@@ -5,7 +5,7 @@ const vm = require('node:vm');
 const path = require('node:path');
 const { JSDOM } = require('jsdom');
 
-function harness() {
+function harness({mobile=false}={}) {
   const dom = new JSDOM('<!doctype html><body></body>', { url: 'https://example.test/' });
   const { document, HTMLElement } = dom.window;
   HTMLElement.prototype.empty = function () { this.replaceChildren(); };
@@ -74,18 +74,23 @@ function harness() {
     addText(callback) { return this.add('text', callback); }
     addToggle(callback) { return this.add('toggle', callback); }
     addButton(callback) { return this.add('button', callback); }
+    addDropdown(callback) {
+      const el=this.el.createEl('select');
+      const component={addOption(value,text){el.createEl('option',{value,text});return this;},setValue(value){el.value=value;return this;},onChange(handler){el.addEventListener('change',()=>handler(el.value));return this;}};
+      callback(component);return this;
+    }
   }
   class Menu {
     constructor() { this.items = []; menus.push(this); }
     addItem(callback) { const item = { setTitle(value) { this.title = value; return this; }, onClick(value) { this.action = value; return this; } }; callback(item); this.items.push(item); return this; }
     showAtMouseEvent() {}
   }
-  const api = { Plugin, PluginSettingTab: SettingsTab, Setting, Menu, Modal, ItemView, MarkdownRenderChild: Child,
+  const api = { Platform: {isMobile:mobile}, Plugin, PluginSettingTab: SettingsTab, Setting, Menu, Modal, ItemView, MarkdownRenderChild: Child,
     Notice: class { constructor(message) { notices.push(message); } },
     setIcon: (el, icon) => { el.dataset.icon = icon; },
     requestUrl: async ({ url }) => { requests.push(url); const response = routes.get(url); if (!response) return { status: 403, text: 'blocked' }; return typeof response === 'function' ? response() : response; }
   };
-  const sandbox = { URL, document, DOMParser: dom.window.DOMParser, navigator: { clipboard: { writeText: async value => copies.push(value) } }, module: { exports: {} }, require: name => name === 'obsidian' ? api : require(name) };
+  const sandbox = { URL, TextDecoder, document, DOMParser: dom.window.DOMParser, navigator: { clipboard: { writeText: async value => copies.push(value) } }, module: { exports: {} }, require: name => {assert.equal(name,'obsidian','mobile runtime must not load Node modules');return api;} };
   vm.runInNewContext(fs.readFileSync(path.join(__dirname, 'main.js'), 'utf8'), sandbox);
   const plugin = new sandbox.module.exports();
   app.workspace.ensureSideLeaf=async(type,side,options)=>{app.sideRequest={type,side,options};app.libraryView=plugin.viewFactory({});await app.libraryView.onOpen();return app.libraryView;};
@@ -254,4 +259,70 @@ test('Live Preview controls do not send mouse or typing events to the note edito
   assert.equal(mouseEvents,0);assert.equal(typingEvents,0);assert.equal(root.getAttribute('contenteditable'),'false');
   input.dispatchEvent(new h.dom.window.KeyboardEvent('keydown',{key:'p',metaKey:true,bubbles:true}));assert.equal(shortcuts,1);
   const details=root.querySelector('details');details.querySelector('summary').click();assert.equal(details.open,true);
+});
+
+test('pagination defaults to 50, navigates without duplicates, resets filters and never limits copy or export',async()=>{
+  const h=await loaded();
+  h.plugin.data.films=Array.from({length:123},(_,i)=>({title:`Film ${String(i+1).padStart(3,'0')}`,year:2020,path:`/film/film-${i}/`,runtime:i%2 ? 15 : 90,loggedDate:'2026-01-01'}));
+  h.plugin.settings.refreshBeforeCopy=false;
+  const root=h.render(),get=label=>root.querySelector(`[aria-label="${label}"]`);
+  assert.equal(root.querySelectorAll('.lb-film').length,50);assert.equal(get('Films per page').value,'50');
+  assert.equal(get('Previous page').disabled,true);assert.equal(get('Next page').disabled,false);
+  const titles=()=>[...root.querySelectorAll('.lb-film-title')].map(el=>el.textContent);
+  const first=titles();get('Next page').click();const second=titles();
+  assert.equal(second.length,50);assert.equal(first.some(title=>second.includes(title)),false);
+  get('Next page').click();assert.equal(titles().length,23);assert.equal(get('Next page').disabled,true);
+  assert.match(root.querySelector('.lb-page-range').textContent,/101–123 of 123/);
+  get('Go to page').value='0';get('Go to page').dispatchEvent(new h.dom.window.Event('change'));assert.deepEqual(titles(),first);
+  get('Next page').click();get('Search films').value='123';get('Search films').dispatchEvent(new h.dom.window.Event('input'));
+  assert.deepEqual(titles(),['Film 123']);assert.equal(root.querySelector('.lb-pagination').hidden,true);
+  await h.plugin.copyFilms('all');assert.equal(h.copies.at(-1).split('\n').length,123);
+  const exported=await h.plugin.exportLibrary();assert.equal(h.files.get(exported).trim().split('\n').length,124);
+  [...root.querySelectorAll('button')].find(el=>el.textContent==='Reset').click();
+  get('Films per page').value='25';get('Films per page').dispatchEvent(new h.dom.window.Event('change'));await h.plugin.saveQueue;
+  assert.equal(titles().length,25);assert.equal(h.plugin.saved.settings.pageSize,25);
+  get('Go to page').value='4';get('Go to page').dispatchEvent(new h.dom.window.Event('change'));assert.equal(titles().length,23);
+  get('Films per page').value='0';get('Films per page').dispatchEvent(new h.dom.window.Event('change'));await h.plugin.saveQueue;
+  assert.equal(titles().length,123);assert.equal(root.querySelector('.lb-page-navigation').hidden,true);
+  await h.plugin.saveSettings({pageSize:100});assert.equal(titles().length,100);get('Next page').click();assert.equal(titles().length,23);
+  h.plugin.data.films=h.plugin.data.films.slice(0,10);h.plugin.redraw();assert.equal(titles().length,10);assert.equal(root.querySelector('.lb-pagination').hidden,true);
+});
+
+test('mobile opens and reuses a main-workspace library without touching the desktop sidebar',async()=>{
+  const h=harness({mobile:true});await h.plugin.onload();
+  let state,created=0,revealed;const leaf={setViewState:async value=>{state=value;}};
+  h.app.workspace.getLeavesOfType=()=>created ? [leaf] : [];
+  h.app.workspace.getLeaf=newLeaf=>{assert.equal(newLeaf,true);created++;return leaf;};
+  h.app.workspace.revealLeaf=async value=>{revealed=value;};
+  h.app.workspace.ensureSideLeaf=()=>{throw Error('Desktop sidebar should not open on mobile');};
+  await h.plugin.openView();await h.plugin.openView();
+  assert.equal(created,1);assert.equal(state.type,'letterboxd-library-view');assert.equal(revealed,leaf);
+  h.plugin.openSettings();assert.match(h.app.modal.contentEl.textContent,/Open library/);assert.doesNotMatch(h.app.modal.contentEl.textContent,/Open side panel/);
+});
+
+test('mobile ZIP import handles compressed UTF-8 exports without Node runtime modules and rejects damaged archives',async()=>{
+  const h=harness({mobile:true});await h.plugin.onload();
+  const {zipSync,strToU8}=require('fflate');
+  const zip=zipSync({'watched.csv':strToU8('Date,Name,Year,Letterboxd URI\n2026-10-28,Cléo from 5 to 7,1962,https://boxd.it/Ab1\n'),'profile.csv':strToU8('Username\nreader_one\n')});
+  assert.equal(h.core.exportData(zip.buffer).films[0].title,'Cléo from 5 to 7');
+  assert.equal(h.core.exportData(zip).username,'reader_one');
+  const damaged=zip.slice();damaged[damaged.length-1]^=255;assert.throws(()=>h.core.exportData(damaged));
+  const badCrc=zip.slice();const directory=badCrc.findIndex((v,i)=>v===0x50 && badCrc[i+1]===0x4b && badCrc[i+2]===1 && badCrc[i+3]===2);badCrc[directory+16]^=255;
+  assert.throws(()=>h.core.exportData(badCrc),/Damaged export ZIP/);
+  const oversized=zip.slice();new DataView(oversized.buffer).setUint32(directory+24,11*1024*1024,true);assert.throws(()=>h.core.exportData(oversized),/too large/);
+  h.plugin.metadata=async()=>({runtime:90,average:4,releaseDate:'1962-04-11'});
+  await h.plugin.importFile({name:'export.zip',size:zip.length,arrayBuffer:async()=>zip.buffer});
+  assert.equal(h.plugin.activeFilms().length,1);assert.equal(h.plugin.activeFilms()[0].title,'Cléo from 5 to 7');
+  const root=h.render();assert.equal(root.querySelectorAll('.lb-film').length,1);
+  h.plugin.settings.refreshBeforeCopy=false;await h.plugin.copyFilms('all');assert.equal(h.copies.at(-1),'Cléo from 5 to 7 (1962)');
+  assert.ok(await h.plugin.exportLibrary());
+});
+
+test('mobile public refresh and attached file picker use browser APIs and keep all copy groups complete',async()=>{
+  const h=harness({mobile:true});await h.plugin.onload();await h.plugin.saveSettings({username:'reader_one'});setupRoutes(h);
+  assert.equal(await h.plugin.refresh(),true);assert.equal(h.plugin.activeFilms().length,3);
+  for(const [group,count] of [['all',3],['movie',2],['short',1]]){await h.plugin.copyFilms(group);assert.equal(h.copies.at(-1).split('\n').length,count);}
+  h.plugin.chooseImport();const input=h.document.querySelector('input[type=file]');assert.ok(input);assert.match(input.accept,/application\/zip/);
+  input.dispatchEvent(new h.dom.window.Event('cancel'));assert.equal(input.isConnected,false);
+  h.plugin.chooseImport();h.plugin.onunload();assert.equal(h.document.querySelector('input[type=file]'),null);
 });

@@ -1,6 +1,9 @@
-const { Plugin, PluginSettingTab, Setting, Menu, Modal, ItemView, MarkdownRenderChild, Notice, requestUrl, setIcon } = require('obsidian');
+const { Plugin, PluginSettingTab, Setting, Menu, Modal, ItemView, MarkdownRenderChild, Notice, Platform, requestUrl, setIcon } = require('obsidian');
+const { inflateSync } = require('./inflate.mjs');
+const PAGE_SIZES = [25, 50, 100, 0];
+const pageSize = value => PAGE_SIZES.includes(value) ? value : 50;
 const LIBRARY_VIEW = 'letterboxd-library-view';
-const DEFAULT_SETTINGS = { username: '', notePath: 'Letterboxd.md', showPosters: true, refreshBeforeCopy: true };
+const DEFAULT_SETTINGS = { username: '', notePath: 'Letterboxd.md', showPosters: true, refreshBeforeCopy: true, pageSize: 50 };
 const LOGO = 'data:image/png;base64,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';
 const LINE = f => `${f.title} (${f.year})`;
 const kind = f => Number.isInteger(f.runtime) && f.runtime >= 0 ? (f.runtime <= 40 ? 'short' : 'movie') : 'unknown';
@@ -43,28 +46,36 @@ function parseCsv(csv) {
   });
 }
 function zipEntry(bytes, filename = 'watched.csv') {
-  const { Buffer }=require('buffer');const data=Buffer.from(bytes);
+  const data=ArrayBuffer.isView(bytes) ? new Uint8Array(bytes.buffer,bytes.byteOffset,bytes.byteLength) : new Uint8Array(bytes);
+  const view=new DataView(data.buffer,data.byteOffset,data.byteLength),decoder=new TextDecoder();
+  const u16=offset=>view.getUint16(offset,true),u32=offset=>view.getUint32(offset,true);
   let end=-1;
-  for(let i=data.length-22;i>=Math.max(0,data.length-65557);i--)if(data.readUInt32LE(i)===0x06054b50){end=i;break;}
-  if(end<0)throw new Error('Invalid export ZIP.');
-  let offset=data.readUInt32LE(end+16);
-  const count=data.readUInt16LE(end+10);
+  for(let i=data.length-22;i>=Math.max(0,data.length-65557);i--)if(u32(i)===0x06054b50 && i+22+u16(i+20)===data.length){end=i;break;}
+  if(end<0 || u16(end+4)!==0 || u16(end+6)!==0 || u16(end+8)!==u16(end+10))throw new Error('Invalid export ZIP.');
+  let offset=u32(end+16);const count=u16(end+10),directoryEnd=offset+u32(end+12);
+  if(count===65535 || directoryEnd>end)throw new Error('Unsupported export ZIP.');
   for(let n=0;n<count;n++) {
-    if(data.readUInt32LE(offset)!==0x02014b50)throw new Error('Invalid ZIP directory.');
-    const method=data.readUInt16LE(offset+10),size=data.readUInt32LE(offset+20),uncompressed=data.readUInt32LE(offset+24);
-    const nameLength=data.readUInt16LE(offset+28),extra=data.readUInt16LE(offset+30),comment=data.readUInt16LE(offset+32);
-    const name=data.subarray(offset+46,offset+46+nameLength).toString('utf8');
+    if(offset+46>directoryEnd || u32(offset)!==0x02014b50)throw new Error('Invalid ZIP directory.');
+    const flags=u16(offset+8),method=u16(offset+10),checksum=u32(offset+16),size=u32(offset+20),uncompressed=u32(offset+24);
+    const nameLength=u16(offset+28),extra=u16(offset+30),comment=u16(offset+32),next=offset+46+nameLength+extra+comment;
+    if(next>directoryEnd)throw new Error('Invalid ZIP directory.');
+    const name=decoder.decode(data.subarray(offset+46,offset+46+nameLength));
     if(name===filename) {
-      if(uncompressed>10*1024*1024)throw new Error('watched.csv is too large.');
-      const local=data.readUInt32LE(offset+42);
-      if(data.readUInt32LE(local)!==0x04034b50)throw new Error('Invalid ZIP file.');
-      const start=local+30+data.readUInt16LE(local+26)+data.readUInt16LE(local+28);
+      if(uncompressed>10*1024*1024)throw new Error(`${filename} is too large.`);
+      if(flags&1)throw new Error('Encrypted export ZIPs are not supported.');
+      const local=u32(offset+42);
+      if(local+30>offset || u32(local)!==0x04034b50)throw new Error('Invalid ZIP file.');
+      const start=local+30+u16(local+26)+u16(local+28);
+      if(start+size>offset)throw new Error('Invalid ZIP file.');
       const compressed=data.subarray(start,start+size);
-      if(method===0)return compressed.toString('utf8');
-      if(method!==8)throw new Error('Unsupported ZIP compression. Extract watched.csv and import it.');
-      return require('zlib').inflateRawSync(compressed,{maxOutputLength:10*1024*1024}).toString('utf8');
+      if(method!==0 && method!==8)throw new Error('Unsupported ZIP compression. Extract watched.csv and import it.');
+      const output=method===0 ? compressed : inflateSync(compressed,{out:new Uint8Array(uncompressed)});
+      let crc=0xffffffff;
+      for(const byte of output){crc^=byte;for(let bit=0;bit<8;bit++)crc=(crc>>>1)^((crc&1)?0xedb88320:0);}
+      if(output.length!==uncompressed || ((crc^0xffffffff)>>>0)!==checksum)throw new Error('Damaged export ZIP.');
+      return decoder.decode(output);
     }
-    offset+=46+nameLength+extra+comment;
+    offset=next;
   }
   return null;
 }
@@ -316,6 +327,7 @@ class LibraryBlock extends MarkdownRenderChild {
   constructor(el, plugin) {
     super(el);
     this.plugin = plugin;
+    this.page = 0;
     this.filter = 'all';
     this.query = '';
     this.tab = 'library';
@@ -346,7 +358,7 @@ class LibraryBlock extends MarkdownRenderChild {
     const films = p.activeFilms(), summary = stats(films);
     const header = root.createDiv({ cls: 'lb-header' });
     const profile = header.createEl('a', { cls: 'lb-profile', href: p.settings.username ? `https://letterboxd.com/${p.settings.username}/` : 'https://letterboxd.com/', attr: { target: '_blank', rel: 'noopener noreferrer' } });
-    profile.createEl('img', { cls: 'lb-logo', attr: { src: LOGO, alt: 'Letterboxd', width: '24', height: '24' } });
+    profile.createEl('img', { cls: 'lb-logo', attr: { src: LOGO, alt: 'Letterboxd Library', width: '24', height: '24' } });
     profile.createSpan({ text: p.settings.username ? `@${p.settings.username}` : 'Letterboxd' });
     const actions = header.createDiv({ cls: 'lb-header-actions' });
     this.iconButton(actions, 'refresh-cw', 'Refresh library', () => p.refresh()).disabled = p.syncing || !p.settings.username;
@@ -382,7 +394,7 @@ class LibraryBlock extends MarkdownRenderChild {
         const track = column.createDiv({ cls: 'lb-hist-track' });
         track.createDiv({ cls: 'lb-hist-bar' }).style.height = `${count/max*100}%`;
         column.createSpan({ text: String(key), cls: 'lb-hist-label' });
-        column.addEventListener('click', () => { onClick(key); this.tab = 'library'; this.render(); });
+        column.addEventListener('click', () => { onClick(key); this.page=0; this.tab = 'library'; this.render(); });
       }
     };
     chart('Ratings', `${summary.average === null ? '—' : summary.average.toFixed(2)} average · ${summary.rated} rated`, summary.ratings, key => `${key} stars`, 'lb-chart-green', key => { this.ratingFilter = `rating:${key}`; this.filter='all'; this.decade='all'; this.query=''; });
@@ -451,7 +463,7 @@ class LibraryBlock extends MarkdownRenderChild {
     for(const [year] of stats(films).decades)decade.createEl('option',{value:String(year),text:`${year}s`});
     decade.value=this.decade;
     const clear=filters.createEl('button',{text:'Reset',cls:'lb-reset'});
-    clear.addEventListener('click',()=>{this.filter='all';this.ratingFilter='all';this.decade='all';this.query='';this.sort='logged';this.direction='desc';this.render();});
+    clear.addEventListener('click',()=>{this.filter='all';this.ratingFilter='all';this.decade='all';this.query='';this.sort='logged';this.direction='desc';this.page=0;this.render();});
     const resultCount=filters.createSpan({cls:'lb-result-count',attr:{role:'status','aria-live':'polite'}});
     const heading = root.createDiv({ cls: 'lb-columns' });
     heading.createSpan({ text: 'Film' });
@@ -459,12 +471,34 @@ class LibraryBlock extends MarkdownRenderChild {
     const average = heading.createSpan({ cls: 'lb-average-heading', attr: { title: 'Letterboxd average out of 5' } });
     average.createSpan({ text: 'Avg' });
     const list = root.createDiv({ cls: 'lb-list' });
+    const pagination=root.createEl('nav',{cls:'lb-pagination',attr:{'aria-label':'Film pages'}});
+    const pageOptions=pagination.createDiv({cls:'lb-page-options'});
+    const range=pageOptions.createSpan({cls:'lb-page-range',attr:{role:'status','aria-live':'polite'}});
+    const sizeLabel=pageOptions.createEl('label',{text:'Per page'});
+    const sizeSelect=sizeLabel.createEl('select',{attr:{'aria-label':'Films per page'}});
+    for(const size of PAGE_SIZES)sizeSelect.createEl('option',{value:String(size),text:size ? String(size) : 'All'});
+    sizeSelect.value=String(pageSize(p.settings.pageSize));
+    const navigation=pagination.createDiv({cls:'lb-page-navigation'});
+    const previous=navigation.createEl('button',{text:'Previous',attr:{'aria-label':'Previous page'}});
+    const pageLabel=navigation.createEl('label',{text:'Page'});
+    const pageSelect=pageLabel.createEl('select',{attr:{'aria-label':'Go to page'}});
+    const totalLabel=pageLabel.createSpan();
+    const next=navigation.createEl('button',{text:'Next',attr:{'aria-label':'Next page'}});
     const draw = () => {
       list.empty();
       const filtered = filterFilms(films,{category:this.filter,query:this.query,ratingFilter:this.ratingFilter,decade:this.decade,sort:this.sort,direction:this.direction});
       resultCount.textContent=`${filtered.length} ${filtered.length===1?'film':'films'}`;
       if (!filtered.length) list.createDiv({ text: 'No films found.', cls: 'lb-empty' });
-      for (const film of filtered) {
+      const size=pageSize(p.settings.pageSize),pages=size ? Math.max(1,Math.ceil(filtered.length/size)) : 1;
+      this.page=Math.max(0,Math.min(this.page,pages-1));
+      const start=size ? this.page*size : 0,visible=size ? filtered.slice(start,start+size) : filtered;
+      pagination.hidden=filtered.length<=25;
+      navigation.hidden=pages===1;
+      range.textContent=filtered.length ? `${start+1}–${start+visible.length} of ${filtered.length}` : '0 films';
+      previous.disabled=this.page===0;next.disabled=this.page===pages-1;
+      if(pageSelect.options.length!==pages){pageSelect.empty();for(let i=0;i<pages;i++)pageSelect.createEl('option',{value:String(i),text:String(i+1)});}
+      pageSelect.value=String(this.page);totalLabel.textContent=`of ${pages}`;
+      for (const film of visible) {
         const row = list.createDiv({ cls: 'lb-film' });
         const info = row.createDiv({ cls: 'lb-film-info' });
         if(p.settings.showPosters) {
@@ -498,12 +532,17 @@ class LibraryBlock extends MarkdownRenderChild {
 
       }
     };
-    search.addEventListener('input', () => { this.query = search.value; draw(); });
-    filter.addEventListener('change', () => { this.filter = filter.value; draw(); });
-    sort.addEventListener('change', () => { this.sort = sort.value; draw(); });
-    direction.addEventListener('change',()=>{this.direction=direction.value;draw();});
-    rated.addEventListener('change',()=>{this.ratingFilter=rated.value;draw();});
-    decade.addEventListener('change',()=>{this.decade=decade.value;draw();});
+    const changePage=value=>{this.page=value;draw();heading.scrollIntoView?.({block:'start'});};
+    previous.addEventListener('click',()=>changePage(this.page-1));
+    next.addEventListener('click',()=>changePage(this.page+1));
+    pageSelect.addEventListener('change',()=>changePage(Number(pageSelect.value)));
+    sizeSelect.addEventListener('change',async()=>{this.page=0;await p.saveSettings({pageSize:pageSize(Number(sizeSelect.value))});});
+    search.addEventListener('input', () => { this.query = search.value; this.page=0; draw(); });
+    filter.addEventListener('change', () => { this.filter = filter.value; this.page=0; draw(); });
+    sort.addEventListener('change', () => { this.sort = sort.value; this.page=0; draw(); });
+    direction.addEventListener('change',()=>{this.direction=direction.value;this.page=0;draw();});
+    rated.addEventListener('change',()=>{this.ratingFilter=rated.value;this.page=0;draw();});
+    decade.addEventListener('change',()=>{this.decade=decade.value;this.page=0;draw();});
     draw();
   }
 }
@@ -542,16 +581,21 @@ function renderSettings(el, p) {
       try {const notePath=validNotePath(value);await p.saveSettings({notePath});} catch { /* Keep the last valid path while the user is typing. */ }
     }));
     new Setting(el).setName('Refresh before copying').setDesc('Try refreshing first. Use the saved list if Letterboxd is unavailable.').addToggle(toggle => toggle.setValue(p.settings.refreshBeforeCopy).onChange(value => p.saveSettings({ refreshBeforeCopy: value })));
+    new Setting(el).setName('Films per page').setDesc('Default page size for the library. Copy, export and stats always use the complete list.').addDropdown(dropdown=>{
+      for(const size of PAGE_SIZES)dropdown.addOption(String(size),size ? String(size) : 'All');
+      dropdown.setValue(String(pageSize(p.settings.pageSize))).onChange(value=>p.saveSettings({pageSize:pageSize(Number(value))}));
+    });
     new Setting(el).setName('Show posters').addToggle(toggle => toggle.setValue(p.settings.showPosters).onChange(value => p.saveSettings({ showPosters: value })));
     new Setting(el).setName('Import export').setDesc('Letterboxd export ZIP or watched.csv.').addButton(button => button.setButtonText('Choose file').setDisabled(p.syncing).onClick(() => p.chooseImport()));
     new Setting(el).setName('Export library').setDesc('Save the complete saved list as a CSV file in your vault.').addButton(button => button.setButtonText('Export CSV').setDisabled(!p.activeFilms().length).onClick(() => p.showExportOptions()));
-    new Setting(el).setName('Library').addButton(button => button.setButtonText('Open side panel').onClick(() => p.openView())).addButton(button => button.setButtonText('Open note').onClick(() => p.openNote()));
+    new Setting(el).setName('Library').addButton(button => button.setButtonText(Platform.isMobile ? 'Open library' : 'Open side panel').onClick(() => p.openView())).addButton(button => button.setButtonText('Open note').onClick(() => p.openNote()));
 }
 module.exports = class LetterboxdLibrary extends Plugin {
   async onload() {
     this.unloaded=false; this.blocks = new Set(); this.syncing = false; this.error = ''; this.progress = '';
     const saved = await this.loadData() || {};
     this.settings = { ...DEFAULT_SETTINGS, ...saved.settings };
+    this.settings.pageSize=pageSize(this.settings.pageSize);
     this.data = { films: [], lastSync: null, username: '', ...saved };
     this.addSettingTab(new LibrarySettings(this.app, this));
     this.registerView(LIBRARY_VIEW,leaf=>new LibraryView(leaf,this));
@@ -563,7 +607,7 @@ module.exports = class LetterboxdLibrary extends Plugin {
     this.addCommand({ id: 'import-library', name: 'Import export', callback: () => this.chooseImport() });
     this.addRibbonIcon('clapperboard', 'Open Letterboxd library', () => this.openView());
   }
-  onunload() { this.unloaded=true; }
+  onunload() { this.unloaded=true; this.importInput?.remove(); }
   activeFilms() { return this.data.username === this.settings.username ? this.data.films : []; }
   redraw() { for(const block of this.blocks) block.render(); }
   enqueueSave(task) {
@@ -575,6 +619,7 @@ module.exports = class LetterboxdLibrary extends Plugin {
     return this.enqueueSave(async()=>{
       const settings={...this.settings,...patch};
       await this.saveData({...this.data,settings});
+      if(settings.pageSize!==this.settings.pageSize)for(const block of this.blocks)block.page=0;
       this.settings=settings;this.redraw();
     });
   }
@@ -625,12 +670,20 @@ module.exports = class LetterboxdLibrary extends Plugin {
   }
   chooseImport() {
     if(this.syncing)return;
-    const input = document.createElement('input'); input.type = 'file'; input.accept = '.zip,.csv';
-    input.addEventListener('change', () => { if(input.files?.[0]) this.importFile(input.files[0]); });
+    this.importInput?.remove();
+    const input = document.createElement('input'); input.type = 'file'; input.accept = '.zip,.csv,application/zip,application/x-zip-compressed,text/csv';
+    input.hidden=true;this.importInput=input;document.body.append(input);
+    input.addEventListener('change', () => { const file=input.files?.[0];input.remove();if(file)this.importFile(file); },{once:true});
+    input.addEventListener('cancel',()=>input.remove(),{once:true});
     input.click();
   }
   async openView() {
-    await this.app.workspace.ensureSideLeaf(LIBRARY_VIEW,'right',{active:true,reveal:true});
+    if(Platform.isMobile) {
+      const workspace=this.app.workspace;
+      const leaf=workspace.getLeavesOfType(LIBRARY_VIEW)[0] || workspace.getLeaf(true);
+      await leaf.setViewState({type:LIBRARY_VIEW,active:true});
+      await workspace.revealLeaf(leaf);
+    } else await this.app.workspace.ensureSideLeaf(LIBRARY_VIEW,'right',{active:true,reveal:true});
   }
   async openNote() {
     const path = validNotePath(this.settings.notePath);

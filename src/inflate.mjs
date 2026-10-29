@@ -1,0 +1,1 @@
+export { inflateSync } from 'fflate';

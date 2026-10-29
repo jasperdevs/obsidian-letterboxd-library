@@ -3,7 +3,7 @@ const assert=require('node:assert/strict');
 const fs=require('node:fs');
 const vm=require('node:vm');
 const path=require('node:path');
-const sandbox={URL, module:{exports:{}},require:(name)=>name==='obsidian'?{Plugin:class{},PluginSettingTab:class{},ItemView:class{},MarkdownRenderChild:class{},Notice:class{},requestUrl:()=>{}}:require(name)};
+const sandbox={URL,TextDecoder, module:{exports:{}},require:(name)=>name==='obsidian'?{Platform:{isMobile:false},Plugin:class{},PluginSettingTab:class{},ItemView:class{},MarkdownRenderChild:class{},Notice:class{},requestUrl:()=>{}}:require(name)};
 vm.runInNewContext(fs.readFileSync(path.join(__dirname,'main.js'),'utf8'),sandbox);
 const {text,select,kind,parseRuntime,parseCsv,watchedFromZip}=sandbox.module.exports.core;
 const films=[{title:'Zulu',year:2000,path:'/film/zulu/',runtime:90},{title:'A short, "yes"',year:1900,path:'/film/a/',runtime:40},{title:'Unknown',year:2026,path:'/film/u/',runtime:null}];

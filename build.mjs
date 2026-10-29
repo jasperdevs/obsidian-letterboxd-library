@@ -1,5 +1,14 @@
-import { readFile, writeFile } from 'node:fs/promises';
+import { build } from 'esbuild';
 
-// Ship the readable runtime source without transpilation or minification.
-const source = await readFile(new URL('./src/plugin.cjs', import.meta.url));
-await writeFile(new URL('./main.js', import.meta.url), source);
+await build({
+  entryPoints: ['src/plugin.cjs'],
+  bundle: true,
+  outfile: 'main.js',
+  platform: 'browser',
+  format: 'cjs',
+  target: ['es2020'],
+  external: ['obsidian'],
+  minify: false,
+  sourcemap: false,
+  legalComments: 'eof'
+});

@@ -102,3 +102,23 @@
   .letterboxd-library .lb-tools input, .letterboxd-library .lb-tools select[aria-label="Sort films"] { grid-column:1/-1; width:100%; max-width:none; }
   .letterboxd-library .lb-tools select[aria-label="Sort direction"] { width:100%; max-width:none; }
 }
+
+.letterboxd-library .lb-pagination { margin-top:16px; padding-top:12px; border-top:1px solid var(--background-modifier-border); }
+.letterboxd-library .lb-pagination[hidden], .letterboxd-library .lb-page-navigation[hidden] { display:none; }
+.letterboxd-library .lb-page-options, .letterboxd-library .lb-page-navigation { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px; }
+.letterboxd-library .lb-page-navigation { margin-top:10px; justify-content:center; }
+.letterboxd-library .lb-pagination label { display:flex; align-items:center; gap:8px; color:var(--text-muted); font-size:var(--font-ui-smaller); }
+.letterboxd-library .lb-page-range { color:var(--text-muted); font-size:var(--font-ui-smaller); font-variant-numeric:tabular-nums; }
+.letterboxd-library .lb-pagination select { min-width:60px; max-width:100px; }
+.letterboxd-library .lb-film-title { overflow-wrap:anywhere; }
+.is-mobile .letterboxd-library button, .is-mobile .letterboxd-library select, .is-mobile .letterboxd-library input { min-height:44px; }
+.is-mobile .letterboxd-library .lb-header-actions button { width:44px; }
+.is-mobile .letterboxd-library .lb-reviews > summary { min-height:44px; display:list-item; align-content:center; }
+.is-mobile .lb-side-panel { padding:12px 12px max(16px,env(safe-area-inset-bottom)); }
+@container (max-width: 400px) {
+  .letterboxd-library .lb-filters { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); }
+  .letterboxd-library .lb-filters select { width:100%; min-width:0; max-width:none; }
+  .letterboxd-library .lb-result-count { margin-left:0; }
+  .letterboxd-library .lb-highlight { flex-wrap:wrap; gap:6px; }
+  .letterboxd-library .lb-chart-panel, .letterboxd-library .lb-facts-panel { padding:12px; }
+}

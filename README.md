@@ -11,7 +11,7 @@ Browse your Letterboxd history in Obsidian. Posters, reviews, filters and stats 
 
 1. Open **Settings → Community plugins → Browse**.
 2. Search for **Letterboxd Library**, install it and enable it.
-3. Requires Obsidian **1.14.5 or later** on desktop.
+3. Requires Obsidian **1.7.2 or later** on desktop, iOS or Android.
 
 For manual installation, download `main.js`, `manifest.json` and `styles.css` from the [latest release](https://github.com/jasperdevs/obsidian-letterboxd-library/releases/latest). Put them in `.obsidian/plugins/letterboxd-library/`, then enable the plugin.
 
@@ -19,7 +19,7 @@ For manual installation, download `main.js`, `manifest.json` and `styles.css` fr
 
 1. Open **Settings → Letterboxd Library** and enter your username.
 2. Import your original Letterboxd export ZIP to include your complete watched list, ratings and text reviews. You can also import `watched.csv` or refresh a public profile.
-3. Click the film icon in the ribbon, or run **Letterboxd Library: Open library**. The library opens in the right sidebar and leaves your note in writing mode.
+3. Click the film icon in the ribbon, or run **Letterboxd Library: Open library**. On desktop, the library opens in the right sidebar and leaves your note in writing mode. On mobile, it opens in a main-workspace tab.
 4. Use **Open library note** if you prefer a note. Its location is configurable.
 
 A public Letterboxd profile or a Letterboxd export is needed to populate a library. No password or API key is requested.
@@ -28,7 +28,7 @@ A public Letterboxd profile or a Letterboxd export is needed to populate a libra
 
 Unit, browser-DOM integration and clean-build tests run in [GitHub Actions](https://github.com/jasperdevs/obsidian-letterboxd-library/actions). They cover imports, account isolation, review rendering, export options, clipboard output and editor interaction.
 
-Release files have GitHub artifact attestations. The readable `src/plugin.cjs` is copied to `main.js` without minification. A clean build reproduces the release byte-for-byte. There are no runtime dependencies.
+Release files have GitHub artifact attestations. The readable sources are bundled with esbuild without minification. A clean build reproduces the release byte-for-byte. ZIP decompression uses the bundled fflate library; no Node.js or Electron APIs are required.
 
 Review text is rendered as text, never executable HTML. Copy only writes film titles and years to the clipboard; it never reads clipboard contents. See section 11 for network and data disclosures.
 
@@ -50,7 +50,7 @@ Review text is rendered as text, never executable HTML. Copy only writes film ti
 
 ### Library panel and note embed
 
-The side panel works while you write in Live Preview or Source mode. The note embed renders in Reading view and Live Preview when the cursor is outside its code block. Source mode displays Markdown source.
+The desktop side panel works while you write in Live Preview or Source mode. The mobile library opens in a separate tab. The note embed renders in Reading view and Live Preview when the cursor is outside its code block. Source mode displays Markdown source.
 
 Put this block in any note:
 
@@ -58,6 +58,14 @@ Put this block in any note:
 ```letterboxd-library
 ```
 ````
+
+### Pagination
+
+The library shows **50 films per page** by default. Use **Previous**, **Next** or the page selector to move through results. Choose **25**, **50**, **100** or **All** in the footer or in settings; the choice is saved. Search, filters and sorting apply to the full library and return you to page one. Copy, export and stats always use the complete library. Navigation is hidden when the results fit on one page.
+
+### Mobile
+
+Install and enable the plugin through Community plugins on iOS or Android. Import your export ZIP or CSV using the system file picker, or enter a public username and refresh. The library opens in the main workspace so it can use the full screen. Controls wrap for small screens, and charts stack vertically. CSV export saves a file in your vault on every platform.
 
 ### Reviews and details
 
@@ -97,7 +105,7 @@ Assign shortcuts under **Settings → Hotkeys** by searching for **Letterboxd Li
 
 | Command | Action |
 | --- | --- |
-| Open library | Open the library in the right sidebar. |
+| Open library | Open the right sidebar on desktop or a library tab on mobile. |
 | Open library note | Open or create the configured note. |
 | Refresh library | Read the public watched list and recent feed. |
 | Import export | Choose a Letterboxd export ZIP or watched CSV. |
@@ -133,7 +141,7 @@ Maintained by [jasperdevs](https://github.com/jasperdevs).
 
 [Open an issue](https://github.com/jasperdevs/obsidian-letterboxd-library/issues) with your Obsidian version, operating system and steps to reproduce the problem. Do not attach account exports or private reviews unless you intend to share them publicly.
 
-For development, run `npm ci` and `npm run check`. `npm run build` reproduces `main.js` from `src/plugin.cjs`. Set `LETTERBOXD_EXPORT` to a local ZIP path to run additional export checks. jsdom is a development-only test dependency.
+For development, run `npm ci` and `npm run check`. `npm run build` bundles `main.js` from `src/plugin.cjs` and `src/inflate.mjs`. Set `LETTERBOXD_EXPORT` to a local ZIP path to run additional export checks. jsdom is a development-only test dependency.
 
 ## 14 License
 
