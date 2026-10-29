@@ -1,6 +1,7 @@
-const { Plugin, PluginSettingTab, Setting, Menu, Modal, MarkdownRenderChild, Notice, requestUrl, setIcon } = require('obsidian');
+const { Plugin, PluginSettingTab, Setting, Menu, Modal, ItemView, MarkdownRenderChild, Notice, requestUrl, setIcon } = require('obsidian');
+const LIBRARY_VIEW = 'letterboxd-library-view';
 const DEFAULT_SETTINGS = { username: '', notePath: 'Letterboxd.md', showPosters: true, refreshBeforeCopy: true };
-const LOGO = 'data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz4KPHN2ZyB3aWR0aD0iNTAwcHgiIGhlaWdodD0iNTAwcHgiIHZpZXdCb3g9IjAgMCA1MDAgNTAwIiB2ZXJzaW9uPSIxLjEiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgeG1sbnM6eGxpbms9Imh0dHA6Ly93d3cudzMub3JnLzE5OTkveGxpbmsiPgogICAgPCEtLSBHZW5lcmF0b3I6IFNrZXRjaCA1Mi4yICg2NzE0NSkgLSBodHRwOi8vd3d3LmJvaGVtaWFuY29kaW5nLmNvbS9za2V0Y2ggLS0+CiAgICA8dGl0bGU+bGV0dGVyYm94ZC1kZWNhbC1kb3RzLXBvcy1yZ2I8L3RpdGxlPgogICAgPGRlc2M+Q3JlYXRlZCB3aXRoIFNrZXRjaC48L2Rlc2M+CiAgICA8ZGVmcz4KICAgICAgICA8cmVjdCBpZD0icGF0aC0xIiB4PSIwIiB5PSIwIiB3aWR0aD0iMTI5Ljg0NzMyOCIgaGVpZ2h0PSIxNDEuMzg5MzEzIj48L3JlY3Q+CiAgICAgICAgPHJlY3QgaWQ9InBhdGgtMyIgeD0iMCIgeT0iMCIgd2lkdGg9IjEyOS44NDczMjgiIGhlaWdodD0iMTQxLjM4OTMxMyI+PC9yZWN0PgogICAgPC9kZWZzPgogICAgPGcgaWQ9ImxldHRlcmJveGQtZGVjYWwtZG90cy1wb3MtcmdiIiBzdHJva2U9Im5vbmUiIHN0cm9rZS13aWR0aD0iMSIgZmlsbD0ibm9uZSIgZmlsbC1ydWxlPSJldmVub2RkIj4KICAgICAgICA8Y2lyY2xlIGlkPSJDaXJjbGUiIGZpbGw9IiMyMDI4MzAiIGN4PSIyNTAiIGN5PSIyNTAiIHI9IjI1MCI+PC9jaXJjbGU+CiAgICAgICAgPGcgaWQ9ImRvdHMtbmVnIiB0cmFuc2Zvcm09InRyYW5zbGF0ZSg2MS4wMDAwMDAsIDE4MC4wMDAwMDApIj4KICAgICAgICAgICAgPGcgaWQ9IkRvdHMiPgogICAgICAgICAgICAgICAgPGVsbGlwc2UgaWQ9IkdyZWVuIiBmaWxsPSIjMDBFMDU0IiBjeD0iMTg5IiBjeT0iNjkuOTczMjgyNCIgcng9IjcwLjA3ODY1MTciIHJ5PSI2OS45NzMyODI0Ij48L2VsbGlwc2U+CiAgICAgICAgICAgICAgICA8ZyBpZD0iQmx1ZSIgdHJhbnNmb3JtPSJ0cmFuc2xhdGUoMjQ4LjE1MjY3MiwgMC4wMDAwMDApIj4KICAgICAgICAgICAgICAgICAgICA8bWFzayBpZD0ibWFzay0yIiBmaWxsPSJ3aGl0ZSI+CiAgICAgICAgICAgICAgICAgICAgICAgIDx1c2UgeGxpbms6aHJlZj0iI3BhdGgtMSI+PC91c2U+CiAgICAgICAgICAgICAgICAgICAgPC9tYXNrPgogICAgICAgICAgICAgICAgICAgIDxnIGlkPSJNYXNrIj48L2c+CiAgICAgICAgICAgICAgICAgICAgPGVsbGlwc2UgZmlsbD0iIzQwQkNGNCIgbWFzaz0idXJsKCNtYXNrLTIpIiBjeD0iNTkuNzY4Njc2NiIgY3k9IjY5Ljk3MzI4MjQiIHJ4PSI3MC4wNzg2NTE3IiByeT0iNjkuOTczMjgyNCI+PC9lbGxpcHNlPgogICAgICAgICAgICAgICAgPC9nPgogICAgICAgICAgICAgICAgPGcgaWQ9Ik9yYW5nZSI+CiAgICAgICAgICAgICAgICAgICAgPG1hc2sgaWQ9Im1hc2stNCIgZmlsbD0id2hpdGUiPgogICAgICAgICAgICAgICAgICAgICAgICA8dXNlIHhsaW5rOmhyZWY9IiNwYXRoLTMiPjwvdXNlPgogICAgICAgICAgICAgICAgICAgIDwvbWFzaz4KICAgICAgICAgICAgICAgICAgICA8ZyBpZD0iTWFzayI+PC9nPgogICAgICAgICAgICAgICAgICAgIDxlbGxpcHNlIGZpbGw9IiNGRjgwMDAiIG1hc2s9InVybCgjbWFzay00KSIgY3g9IjcwLjA3ODY1MTciIGN5PSI2OS45NzMyODI0IiByeD0iNzAuMDc4NjUxNyIgcnk9IjY5Ljk3MzI4MjQiPjwvZWxsaXBzZT4KICAgICAgICAgICAgICAgIDwvZz4KICAgICAgICAgICAgICAgIDxwYXRoIGQ9Ik0xMjkuNTM5MzI2LDEwNy4wMjIyNDQgQzEyMi44MTA0OTMsOTYuMjc4MTY3NyAxMTguOTIxMzQ4LDgzLjU3OTIyMTMgMTE4LjkyMTM0OCw2OS45NzMyODI0IEMxMTguOTIxMzQ4LDU2LjM2NzM0MzUgMTIyLjgxMDQ5Myw0My42NjgzOTcyIDEyOS41MzkzMjYsMzIuOTI0MzIwOSBDMTM2LjI2ODE1OSw0My42NjgzOTcyIDE0MC4xNTczMDMsNTYuMzY3MzQzNSAxNDAuMTU3MzAzLDY5Ljk3MzI4MjQgQzE0MC4xNTczMDMsODMuNTc5MjIxMyAxMzYuMjY4MTU5LDk2LjI3ODE2NzcgMTI5LjUzOTMyNiwxMDcuMDIyMjQ0IFoiIGlkPSJPdmVybGFwIiBmaWxsPSIjRkZGRkZGIj48L3BhdGg+CiAgICAgICAgICAgICAgICA8cGF0aCBkPSJNMjQ4LjQ2MDY3NCwzMi45MjQzMjA5IEMyNTUuMTg5NTA3LDQzLjY2ODM5NzIgMjU5LjA3ODY1Miw1Ni4zNjczNDM1IDI1OS4wNzg2NTIsNjkuOTczMjgyNCBDMjU5LjA3ODY1Miw4My41NzkyMjEzIDI1NS4xODk1MDcsOTYuMjc4MTY3NyAyNDguNDYwNjc0LDEwNy4wMjIyNDQgQzI0MS43MzE4NDEsOTYuMjc4MTY3NyAyMzcuODQyNjk3LDgzLjU3OTIyMTMgMjM3Ljg0MjY5Nyw2OS45NzMyODI0IEMyMzcuODQyNjk3LDU2LjM2NzM0MzUgMjQxLjczMTg0MSw0My42NjgzOTcyIDI0OC40NjA2NzQsMzIuOTI0MzIwOSBaIiBpZD0iT3ZlcmxhcCIgZmlsbD0iI0ZGRkZGRiI+PC9wYXRoPgogICAgICAgICAgICA8L2c+CiAgICAgICAgPC9nPgogICAgPC9nPgo8L3N2Zz4=';
+const LOGO = 'data:image/png;base64,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';
 const LINE = f => `${f.title} (${f.year})`;
 const kind = f => Number.isInteger(f.runtime) && f.runtime >= 0 ? (f.runtime <= 40 ? 'short' : 'movie') : 'unknown';
 function select(films, group = 'all') {
@@ -130,14 +131,58 @@ function loggedLabel(film) {
   if(day)options.timeZone='UTC';
   return `Logged ${new Intl.DateTimeFormat(undefined,options).format(date)}`;
 }
-function libraryCsv(films) {
+function validReviewUrl(value) {
+  if(typeof value!=='string')return null;
+  return /^https:\/\/(?:boxd\.it\/[A-Za-z0-9]+|letterboxd\.com\/[a-z0-9_]+\/film\/[a-z0-9-]+\/(?:[0-9]+\/)?)$/.test(value) ? value : null;
+}
+function mergeReviews(existing = [], incoming = []) {
+  const result=existing.filter(r=>r && typeof r.text==='string' && r.text.trim()).map(r=>({...r}));
+  const normalized=value=>value.trim().replace(/\s+/g,' ');
+  for(const review of incoming) {
+    if(!review || typeof review.text!=='string' || !review.text.trim())continue;
+    const index=result.findIndex(previous=>(previous.id && previous.id===review.id) || (previous.url && previous.url===review.url) ||
+      (previous.source!==review.source && normalized(previous.text)===normalized(review.text) &&
+        ((previous.watchedDate && previous.watchedDate===review.watchedDate) || (previous.date && review.date && String(previous.date).slice(0,10)===String(review.date).slice(0,10)))));
+    if(index<0)result.push({...review});
+    else result[index]={...result[index],...review,id:result[index].id};
+  }
+  return result.sort((a,b)=>(Date.parse(b.date || '') || 0)-(Date.parse(a.date || '') || 0));
+}
+function reviewHtmlText(html) {
+  const doc=new DOMParser().parseFromString(html,'text/html');
+  for(const el of doc.querySelectorAll('img,script,style,iframe,object,embed,form'))el.remove();
+  for(const el of doc.querySelectorAll('p')) {
+    if(/^Watched (?:on|before) (?:Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday) .+\d{4}\.$/.test(el.textContent.trim()))el.remove();
+    else el.append('\n\n');
+  }
+  for(const el of doc.querySelectorAll('br'))el.replaceWith('\n');
+  return (doc.body.textContent || '').replace(/\n{3,}/g,'\n\n').trim();
+}
+function libraryCsv(films, {includeRatings=true,includeReviews=false} = {}) {
   const cell=value=>{
     let output=String(value ?? '');
     if(/^[=+@\-\t\r\n]/.test(output))output=`'${output}`;
     return `"${output.replace(/"/g,'""')}"`;
   };
-  const rows=[['Title','Year','Release date','Type','Runtime (minutes)','Logged date','Your rating','Letterboxd average','Letterboxd URL']];
-  for(const f of select(films))rows.push([f.title,f.year,releaseDate(f.releaseDate),kind(f),f.runtime,f.loggedDate,f.rating,f.average,filmUrl(f)]);
+  const header=['Title','Year','Release date','Type','Runtime (minutes)','Logged date'];
+  if(includeRatings)header.push('Your rating','Letterboxd average');
+  header.push('Letterboxd URL');
+  if(includeReviews)header.push('Review count','Reviews','Review links');
+  const rows=[header];
+  for(const f of select(films)) {
+    const row=[f.title,f.year,releaseDate(f.releaseDate),kind(f),f.runtime,f.loggedDate];
+    if(includeRatings)row.push(f.rating,f.average);
+    row.push(filmUrl(f));
+    if(includeReviews) {
+      const reviews=mergeReviews([],f.reviews || []);
+      const content=reviews.map((review,index)=>{
+        const date=review.watchedDate || String(review.date || '').slice(0,10);
+        return [`Review ${index+1}${date ? ` · ${date}` : ''}${includeRatings && review.rating!=null ? ` · ${review.rating}/5` : ''}`,review.text].join('\n');
+      }).join('\n\n');
+      row.push(reviews.length,content,reviews.map(r=>validReviewUrl(r.url) || '').join('\n'));
+    }
+    rows.push(row);
+  }
   return rows.map(row=>row.map(cell).join(',')).join('\r\n')+'\r\n';
 }
 function parseMetadata(html) {
@@ -194,11 +239,12 @@ function filterFilms(films, options = {}) {
   const sign=direction==='desc' ? -1 : 1;
   result.sort((a,b)=>{
     if(sort==='logged') {
-      if(Number.isInteger(a.loggedOrder) && Number.isInteger(b.loggedOrder))return -sign*(a.loggedOrder-b.loggedOrder);
       const aDate=Date.parse(a.loggedDate || ''),bDate=Date.parse(b.loggedDate || '');
-      if(!Number.isFinite(aDate))return Number.isFinite(bDate) ? 1 : a.title.localeCompare(b.title);
-      if(!Number.isFinite(bDate))return -1;
-      return sign*(aDate-bDate) || a.title.localeCompare(b.title);
+      if(Number.isFinite(aDate) && Number.isFinite(bDate))return sign*(aDate-bDate) || a.title.localeCompare(b.title);
+      if(Number.isFinite(aDate))return -1;
+      if(Number.isFinite(bDate))return 1;
+      if(Number.isInteger(a.loggedOrder) && Number.isInteger(b.loggedOrder))return -sign*(a.loggedOrder-b.loggedOrder);
+      return a.title.localeCompare(b.title);
     }
     if(sort==='title')return sign*(a.title.localeCompare(b.title,'en',{sensitivity:'base',numeric:true}) || a.year-b.year);
     if(sort==='year')return sign*releaseKey(a).localeCompare(releaseKey(b)) || a.title.localeCompare(b.title);
@@ -216,7 +262,15 @@ function parseRecentLogs(xml) {
     const link=item.getElementsByTagName('link')[0]?.textContent || '';
     const match=/^https:\/\/letterboxd\.com\/[a-z0-9_]+\/film\/([a-z0-9-]+)\//.exec(link);
     const date=new Date(item.getElementsByTagName('pubDate')[0]?.textContent || '');
-    if(match && Number.isFinite(date.getTime()))entries.push({path:`/film/${match[1]}/`,loggedDate:date.toISOString()});
+    if(match && Number.isFinite(date.getTime())) {
+      const guid=item.getElementsByTagName('guid')[0]?.textContent || '';
+      const text=guid && !guid.startsWith('letterboxd-review-') ? '' : reviewHtmlText(item.getElementsByTagName('description')[0]?.textContent || '');
+      const ratingText=item.getElementsByTagName('letterboxd:memberRating')[0]?.textContent;
+      const rating=ratingText ? Number(ratingText) : null;
+      const url=validReviewUrl(link);
+      const review=text && url ? {id:url,url,date:date.toISOString(),watchedDate:releaseDate(item.getElementsByTagName('letterboxd:watchedDate')[0]?.textContent),rating:Number.isFinite(rating) && rating>=.5 && rating<=5 ? rating : null,text,source:'rss'} : null;
+      entries.push({path:`/film/${match[1]}/`,loggedDate:date.toISOString(),review});
+    }
   }
   return entries;
 }
@@ -239,6 +293,21 @@ function exportData(bytes) {
     }
     for(const film of films) {const date=dates.get(`${film.title}\u0000${film.year}`);if(date && (!film.loggedDate || date>film.loggedDate))film.loggedDate=date;}
   }
+  const reviewsCsv=zipEntry(bytes,'reviews.csv');
+  if(reviewsCsv!==null) {
+    const [headers,...rows]=csvRows(reviewsCsv);const byFilm=new Map();
+    if(!['Name','Year','Review','Letterboxd URI'].every(name=>headers.includes(name)))throw new Error('Invalid reviews.csv in export.');
+    for(const row of rows) {
+      const text=(row[headers.indexOf('Review')] || '').trim();if(!text)continue;
+      const url=validReviewUrl(row[headers.indexOf('Letterboxd URI')]);
+      if(!url)throw new Error('Invalid review link in export.');
+      const key=`${row[headers.indexOf('Name')]}\u0000${row[headers.indexOf('Year')]}`;
+      const value=row[headers.indexOf('Rating')],rating=value ? Number(value) : null;
+      const review={id:url,url,date:releaseDate(row[headers.indexOf('Date')]),watchedDate:releaseDate(row[headers.indexOf('Watched Date')]),rating:Number.isFinite(rating) && rating>=.5 && rating<=5 ? rating : null,text,source:'export'};
+      byFilm.set(key,mergeReviews(byFilm.get(key) || [],[review]));
+    }
+    for(const film of films)film.reviews=byFilm.get(`${film.title}\u0000${film.year}`) || [];
+  }
   let username='';const profile=zipEntry(bytes,'profile.csv');
   if(profile){const [headers,row]=csvRows(profile);username=validUsername(row?.[headers.indexOf('Username')]);}
   return {films,username};
@@ -255,7 +324,15 @@ class LibraryBlock extends MarkdownRenderChild {
     this.ratingFilter = 'all';
     this.decade = 'all';
   }
-  onload() { this.plugin.blocks.add(this); this.render(); }
+  onload() {
+    const root=this.containerEl;
+    root.setAttribute('contenteditable','false');
+    for(const name of ['pointerdown','mousedown','click','dblclick'])this.registerDomEvent(root,name,event=>event.stopPropagation());
+    this.registerDomEvent(root,'keydown',event=>{
+      if(!event.metaKey && !event.ctrlKey && !event.altKey && event.target.closest?.('input,select,textarea,button,summary'))event.stopPropagation();
+    });
+    this.plugin.blocks.add(this);this.render();
+  }
   onunload() { this.plugin.blocks.delete(this); }
   iconButton(parent, icon, label, callback) {
     const button = parent.createEl('button', { cls: 'clickable-icon', attr: { 'aria-label': label, title: label } });
@@ -380,7 +457,6 @@ class LibraryBlock extends MarkdownRenderChild {
     heading.createSpan({ text: 'Film' });
     heading.createSpan({ text: 'You', attr: { title: 'Your rating out of 5' } });
     const average = heading.createSpan({ cls: 'lb-average-heading', attr: { title: 'Letterboxd average out of 5' } });
-    average.createEl('img', { attr: { src: LOGO, alt: '', width: '16', height: '16' } });
     average.createSpan({ text: 'Avg' });
     const list = root.createDiv({ cls: 'lb-list' });
     const draw = () => {
@@ -404,9 +480,22 @@ class LibraryBlock extends MarkdownRenderChild {
         if(url) caption.createEl('a', { text: film.title, href: url, cls: 'lb-film-title', attr: { target: '_blank', rel: 'noopener noreferrer' } });
         else caption.createSpan({ text: film.title });
         caption.createDiv({ text: `${film.year}${Number.isInteger(film.runtime) ? ` · ${film.runtime} min` : ''}`, cls: 'lb-film-meta' });
-        caption.createDiv({text:loggedLabel(film),cls:'lb-film-logged',attr:{title:film.loggedDate || 'Import a Letterboxd export to fill older logged dates.'}});
         row.createSpan({ text: film.rating == null ? '—' : `${film.rating} ★`, cls: 'lb-rating', attr: { 'aria-label': film.rating == null ? 'Not rated by you' : `Your rating: ${film.rating} out of 5` } });
         row.createSpan({ text: film.average == null ? '—' : film.average.toFixed(2), cls: 'lb-rating lb-community', attr: { 'aria-label': film.average == null ? 'Letterboxd average unavailable' : `Letterboxd average: ${film.average.toFixed(2)} out of 5` } });
+        const reviews=mergeReviews([],film.reviews || []);
+        if(reviews.length || film.loggedDate) {
+          const details=row.createEl('details',{cls:'lb-reviews lb-film-details'});
+          details.createEl('summary',{text:reviews.length===1 ? 'Review' : reviews.length ? `Reviews (${reviews.length})` : 'Details'});
+          if(film.loggedDate)details.createDiv({text:loggedLabel(film),cls:'lb-film-logged'});
+          let lastWatchedDate=null;
+          for(const review of reviews) {
+            const entry=details.createDiv({cls:'lb-review'});
+            if(review.watchedDate && review.watchedDate!==lastWatchedDate)entry.createDiv({text:`Watched ${review.watchedDate}`,cls:'lb-review-meta'});
+            lastWatchedDate=review.watchedDate;
+            entry.createDiv({text:review.text,cls:'lb-review-text'});
+          }
+        }
+
       }
     };
     search.addEventListener('input', () => { this.query = search.value; draw(); });
@@ -416,6 +505,21 @@ class LibraryBlock extends MarkdownRenderChild {
     rated.addEventListener('change',()=>{this.ratingFilter=rated.value;draw();});
     decade.addEventListener('change',()=>{this.decade=decade.value;draw();});
     draw();
+  }
+}
+class LibraryView extends ItemView {
+  constructor(leaf,plugin) {super(leaf);this.plugin=plugin;}
+  getViewType() {return LIBRARY_VIEW;}
+  getDisplayText() {return 'Letterboxd Library';}
+  getIcon() {return 'clapperboard';}
+  async onOpen() {
+    this.contentEl.empty();this.contentEl.addClass('lb-side-panel');
+    this.block=new LibraryBlock(this.contentEl.createDiv(),this.plugin);
+    this.addChild(this.block);
+  }
+  async onClose() {
+    if(this.block){this.removeChild(this.block);this.block=null;}
+    this.contentEl.empty();
   }
 }
 class LibrarySettings extends PluginSettingTab {
@@ -440,8 +544,8 @@ function renderSettings(el, p) {
     new Setting(el).setName('Refresh before copying').setDesc('Try refreshing first. Use the saved list if Letterboxd is unavailable.').addToggle(toggle => toggle.setValue(p.settings.refreshBeforeCopy).onChange(value => p.saveSettings({ refreshBeforeCopy: value })));
     new Setting(el).setName('Show posters').addToggle(toggle => toggle.setValue(p.settings.showPosters).onChange(value => p.saveSettings({ showPosters: value })));
     new Setting(el).setName('Import export').setDesc('Letterboxd export ZIP or watched.csv.').addButton(button => button.setButtonText('Choose file').setDisabled(p.syncing).onClick(() => p.chooseImport()));
-    new Setting(el).setName('Export library').setDesc('Save the complete saved list as a CSV file in your vault.').addButton(button => button.setButtonText('Export CSV').setDisabled(!p.activeFilms().length).onClick(() => p.exportLibrary()));
-    new Setting(el).setName('Library').addButton(button => button.setButtonText('Open note').onClick(() => p.openNote()));
+    new Setting(el).setName('Export library').setDesc('Save the complete saved list as a CSV file in your vault.').addButton(button => button.setButtonText('Export CSV').setDisabled(!p.activeFilms().length).onClick(() => p.showExportOptions()));
+    new Setting(el).setName('Library').addButton(button => button.setButtonText('Open side panel').onClick(() => p.openView())).addButton(button => button.setButtonText('Open note').onClick(() => p.openNote()));
 }
 module.exports = class LetterboxdLibrary extends Plugin {
   async onload() {
@@ -450,12 +554,14 @@ module.exports = class LetterboxdLibrary extends Plugin {
     this.settings = { ...DEFAULT_SETTINGS, ...saved.settings };
     this.data = { films: [], lastSync: null, username: '', ...saved };
     this.addSettingTab(new LibrarySettings(this.app, this));
+    this.registerView(LIBRARY_VIEW,leaf=>new LibraryView(leaf,this));
     this.registerMarkdownCodeBlockProcessor('letterboxd-library', (_source,el,ctx) => ctx.addChild(new LibraryBlock(el,this)));
-    this.addCommand({ id: 'open-library', name: 'Open library', callback: () => this.openNote() });
+    this.addCommand({ id: 'open-library', name: 'Open library', callback: () => this.openView() });
+    this.addCommand({ id: 'open-library-note', name: 'Open library note', callback: () => this.openNote() });
     this.addCommand({ id: 'refresh-library', name: 'Refresh library', callback: () => this.refresh() });
-    this.addCommand({ id: 'export-library', name: 'Export library as CSV', callback: () => this.exportLibrary() });
+    this.addCommand({ id: 'export-library', name: 'Export library as CSV', callback: () => this.showExportOptions() });
     this.addCommand({ id: 'import-library', name: 'Import export', callback: () => this.chooseImport() });
-    this.addRibbonIcon('clapperboard', 'Open Letterboxd library', () => this.openNote());
+    this.addRibbonIcon('clapperboard', 'Open Letterboxd library', () => this.openView());
   }
   onunload() { this.unloaded=true; }
   activeFilms() { return this.data.username === this.settings.username ? this.data.films : []; }
@@ -487,7 +593,20 @@ module.exports = class LetterboxdLibrary extends Plugin {
     renderSettings(modal.contentEl,this);
     modal.open();
   }
-  async exportLibrary() {
+  showExportOptions() {
+    if(!this.activeFilms().length){new Notice('No films to export.');return;}
+    const modal=new Modal(this.app);modal.titleEl.setText('Export library');
+    const options={includeRatings:true,includeReviews:false};
+    new Setting(modal.contentEl).setName('Include ratings').setDesc('Your ratings, Letterboxd averages and review ratings.').addToggle(toggle=>toggle.setValue(true).onChange(value=>{options.includeRatings=value;}));
+    new Setting(modal.contentEl).setName('Include text reviews').setDesc('All stored text reviews, including earlier watches.').addToggle(toggle=>toggle.setValue(false).onChange(value=>{options.includeReviews=value;}));
+    new Setting(modal.contentEl).addButton(button=>button.setButtonText('Export CSV').onClick(async()=>{
+      button.setDisabled(true);
+      const exported=await this.exportLibrary(options);
+      if(exported)modal.close();else button.setDisabled(false);
+    }));
+    modal.open();
+  }
+  async exportLibrary(options = {}) {
     if(this.exporting)return null;
     const films=this.activeFilms();
     if(!films.length) { new Notice('No films to export.'); return null; }
@@ -498,7 +617,7 @@ module.exports = class LetterboxdLibrary extends Plugin {
       const base=`Letterboxd ${this.settings.username || 'library'} ${day}`;
       let path=`${base}.csv`, suffix=2;
       while(this.app.vault.getAbstractFileByPath(path))path=`${base} (${suffix++}).csv`;
-      await this.app.vault.create(path,libraryCsv(films));
+      await this.app.vault.create(path,libraryCsv(films,options));
       new Notice(`Exported ${select(films).length} films to ${path}`);
       return path;
     } catch(error) { new Notice('Could not export the library.'); return null; }
@@ -509,6 +628,9 @@ module.exports = class LetterboxdLibrary extends Plugin {
     const input = document.createElement('input'); input.type = 'file'; input.accept = '.zip,.csv';
     input.addEventListener('change', () => { if(input.files?.[0]) this.importFile(input.files[0]); });
     input.click();
+  }
+  async openView() {
+    await this.app.workspace.ensureSideLeaf(LIBRARY_VIEW,'right',{active:true,reveal:true});
   }
   async openNote() {
     const path = validNotePath(this.settings.notePath);
@@ -611,14 +733,14 @@ module.exports = class LetterboxdLibrary extends Plugin {
       if(expected === null || found.size !== expected)throw new Error('The watched list is incomplete. Try importing an export.');
       let recent=[];
       try {recent=parseRecentLogs(await this.fetchPage(`/${validUsername(this.settings.username)}/rss/`));} catch { /* The full watched list remains usable if RSS is unavailable. */ }
-      const recentByFilm=new Map();
-      for(const entry of recent)if(!recentByFilm.has(entry.path))recentByFilm.set(entry.path,entry);
+      const recentByFilm=new Map(),recentReviews=new Map();
+      for(const entry of recent) {if(!recentByFilm.has(entry.path))recentByFilm.set(entry.path,entry);if(entry.review)recentReviews.set(entry.path,mergeReviews(recentReviews.get(entry.path) || [],[entry.review]));}
       const liveOrder=[...found.keys()];
       const ordered=[...recentByFilm.keys()].filter(path=>found.has(path)).concat(liveOrder.filter(path=>!recentByFilm.has(path)));
       const ranks=new Map(ordered.map((path,index)=>[path,index]));
       for(const film of found.values()) {film.loggedOrder=ranks.get(film.path);const entry=recentByFilm.get(film.path);if(entry)film.loggedDate=entry.loggedDate;}
       const cache = new Map(this.activeFilms().map(f => [f.path,f]));
-      const films = [...found.values()].map(f => ({ ...cache.get(f.path), ...f, runtime: cache.get(f.path)?.runtime ?? f.runtime }));
+      const films = [...found.values()].map(f => ({ ...cache.get(f.path), ...f, runtime: cache.get(f.path)?.runtime ?? f.runtime, reviews:mergeReviews(cache.get(f.path)?.reviews || [],recentReviews.get(f.path) || []) }));
       let index = 0, done = 0;
       const worker = async () => {
         while(index < films.length) {
@@ -639,4 +761,4 @@ module.exports = class LetterboxdLibrary extends Plugin {
     finally { this.syncing = false; this.progress = ''; this.redraw(); }
   }
 };
-module.exports.core = { select, text, kind, parseList, parseRuntime, parseCsv, watchedFromZip, zipEntry, exportData, parseMetadata, smallPoster, stats, filterFilms, validUsername, filmUrl, releaseDate, releaseLabel, libraryCsv, parseRecentLogs, LibraryBlock, validNotePath, loggedLabel };
+module.exports.core = { select, text, kind, parseList, parseRuntime, parseCsv, watchedFromZip, zipEntry, exportData, parseMetadata, smallPoster, stats, filterFilms, validUsername, filmUrl, releaseDate, releaseLabel, libraryCsv, parseRecentLogs, LibraryBlock, validNotePath, loggedLabel, validReviewUrl, mergeReviews, reviewHtmlText, LibraryView };

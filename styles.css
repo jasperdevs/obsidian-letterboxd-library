@@ -88,3 +88,17 @@
 }
 
 .letterboxd-library .lb-film-logged { color:var(--text-faint); font-size:var(--font-ui-smaller); line-height:1.4; margin-top:2px; }
+.letterboxd-library .lb-reviews { grid-column:1 / -1; margin:2px 0 0 42px; }
+.letterboxd-library .lb-reviews > summary { width:fit-content; color:var(--text-muted); font-size:var(--font-ui-smaller); cursor:pointer; padding:4px 0; }
+.letterboxd-library .lb-reviews > summary:hover { color:var(--text-normal); }
+.letterboxd-library .lb-review { padding:12px 0; border-top:1px solid var(--background-modifier-border); }
+.letterboxd-library .lb-review-meta { color:var(--text-muted); font-size:var(--font-ui-smaller); margin-bottom:6px; font-variant-numeric:tabular-nums; }
+.letterboxd-library .lb-review-text { white-space:pre-wrap; overflow-wrap:anywhere; line-height:1.6; user-select:text; }
+.letterboxd-library .lb-review-link { display:inline-block; margin-top:8px; color:var(--text-muted); font-size:var(--font-ui-smaller); }
+.lb-side-panel { padding:12px; overflow-y:auto; }
+.letterboxd-library .lb-logo { border-radius:50%; }
+@container (max-width: 540px) {
+  .letterboxd-library .lb-tools { display:grid; grid-template-columns:minmax(0,1fr) auto; }
+  .letterboxd-library .lb-tools input, .letterboxd-library .lb-tools select[aria-label="Sort films"] { grid-column:1/-1; width:100%; max-width:none; }
+  .letterboxd-library .lb-tools select[aria-label="Sort direction"] { width:100%; max-width:none; }
+}

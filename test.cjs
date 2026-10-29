@@ -3,7 +3,7 @@ const assert=require('node:assert/strict');
 const fs=require('node:fs');
 const vm=require('node:vm');
 const path=require('node:path');
-const sandbox={URL, module:{exports:{}},require:(name)=>name==='obsidian'?{Plugin:class{},PluginSettingTab:class{},MarkdownRenderChild:class{},Notice:class{},requestUrl:()=>{}}:require(name)};
+const sandbox={URL, module:{exports:{}},require:(name)=>name==='obsidian'?{Plugin:class{},PluginSettingTab:class{},ItemView:class{},MarkdownRenderChild:class{},Notice:class{},requestUrl:()=>{}}:require(name)};
 vm.runInNewContext(fs.readFileSync(path.join(__dirname,'main.js'),'utf8'),sandbox);
 const {text,select,kind,parseRuntime,parseCsv,watchedFromZip}=sandbox.module.exports.core;
 const films=[{title:'Zulu',year:2000,path:'/film/zulu/',runtime:90},{title:'A short, "yes"',year:1900,path:'/film/a/',runtime:40},{title:'Unknown',year:2026,path:'/film/u/',runtime:null}];
@@ -106,7 +106,7 @@ test('extended stats handle missing and empty data without invalid numbers',()=>
 });
 test('fresh installation has no preset username, note location or film data',async()=>{
  const p=new sandbox.module.exports();p.loadData=async()=>null;
- for(const name of ['addSettingTab','registerMarkdownCodeBlockProcessor','addCommand','addRibbonIcon'])p[name]=()=>{};
+ for(const name of ['addSettingTab','registerView','registerMarkdownCodeBlockProcessor','addCommand','addRibbonIcon'])p[name]=()=>{};
  await p.onload();assert.equal(p.settings.username,'');assert.equal(p.settings.notePath,'Letterboxd.md');assert.equal(p.activeFilms().length,0);
 });
 function clipboardFixture() {
@@ -179,4 +179,9 @@ test('logged row labels show real dates and explicitly identify missing dates',(
  assert.equal(loggedLabel({}), 'Logged date unavailable');
  assert.equal(loggedLabel({loggedDate:'invalid'}),'Logged date unavailable');
  assert.match(loggedLabel({loggedDate:'2026-10-28T12:00:00Z'}),/^Logged .*2026/);
+});
+test('logged-date sorting uses complete recorded dates before partial public-page ranks',()=>{
+ const data=[{title:'New',year:2020,path:'/film/new/',loggedDate:'2026-10-28',loggedOrder:20},{title:'Old',year:2020,path:'/film/old/',loggedDate:'2025-01-01',loggedOrder:0},{title:'Unknown',year:2020,path:'/film/unknown/',loggedOrder:1}];
+ assert.equal(filterFilms(data,{sort:'logged',direction:'desc'}).map(f=>f.title).join(','),'New,Old,Unknown');
+ assert.equal(filterFilms(data,{sort:'logged',direction:'asc'}).map(f=>f.title).join(','),'Old,New,Unknown');
 });

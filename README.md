@@ -1,54 +1,140 @@
+<p align="center"><img src="assets/logo-small.png" width="80" height="80" alt="Letterboxd Library logo"></p>
+
 # Letterboxd Library
 
-An independent Obsidian desktop plugin for watched films, ratings and stats. Requires Obsidian 1.14.5 or later.
+Browse your Letterboxd history in Obsidian. Posters, reviews, filters and stats in one local library. Open it beside your writing, or embed it in a note.
 
-- Compact rows with small posters, the logged date, and links to each film on Letterboxd.
-- Personal ratings and Letterboxd averages, both out of five.
-- Movies and shorts; combined search, rating and decade filters; newest-logged-first by default, with ascending or descending sorting by logged date, title, release date, runtime or rating.
-- Copy titles and years for both categories, movies only, or shorts only.
-- Clickable release-decade and rating charts, format breakdowns, runtime, longest/shortest films, oldest/newest releases, and rating statistics.
+![Browse your Letterboxd library in Obsidian](assets/library-feature.png)
+![Ratings, release decades and runtime statistics](assets/stats-feature.png)
 
-## Install
+## 1 Installation
 
-Copy `main.js`, `styles.css` and `manifest.json` into `.obsidian/plugins/letterboxd-library/`. Enable **Letterboxd Library** under Settings → Community plugins.
+1. Open **Settings → Community plugins → Browse**.
+2. Search for **Letterboxd Library**, install it and enable it.
+3. Requires Obsidian **1.14.5 or later** on desktop.
 
-Set your username in the plugin settings. Import a Letterboxd export ZIP from the same settings page. Run **Letterboxd Library: Open library** from the command palette. The default note is `Letterboxd.md`; its location is configurable. You can also put this block in any note:
+For manual installation, download `main.js`, `manifest.json` and `styles.css` from the [latest release](https://github.com/jasperdevs/obsidian-letterboxd-library/releases/latest). Put them in `.obsidian/plugins/letterboxd-library/`, then enable the plugin.
+
+## 2 Getting started
+
+1. Open **Settings → Letterboxd Library** and enter your username.
+2. Import your original Letterboxd export ZIP to include your complete watched list, ratings and text reviews. You can also import `watched.csv` or refresh a public profile.
+3. Click the film icon in the ribbon, or run **Letterboxd Library: Open library**. The library opens in the right sidebar and leaves your note in writing mode.
+4. Use **Open library note** if you prefer a note. Its location is configurable.
+
+A public Letterboxd profile or a Letterboxd export is needed to populate a library. No password or API key is requested.
+
+## 3 Security and quality
+
+Unit, browser-DOM integration and clean-build tests run in [GitHub Actions](https://github.com/jasperdevs/obsidian-letterboxd-library/actions). They cover imports, account isolation, review rendering, export options, clipboard output and editor interaction.
+
+Release files have GitHub artifact attestations. The readable `src/plugin.cjs` is copied to `main.js` without minification. A clean build reproduces the release byte-for-byte. There are no runtime dependencies.
+
+Review text is rendered as text, never executable HTML. Copy only writes film titles and years to the clipboard; it never reads clipboard contents. See section 11 for network and data disclosures.
+
+## Table of contents
+
+- [4 Documentation](#4-documentation)
+- [5 Keyboard shortcuts](#5-keyboard-shortcuts)
+- [6 Synced and local settings](#6-synced-and-local-settings)
+- [7 Search and filters](#7-search-and-filters)
+- [8 Custom hotkeys](#8-custom-hotkeys)
+- [9 Commands](#9-commands)
+- [10 Features](#10-features)
+- [11 Network and diagnostics disclosure](#11-network-and-diagnostics-disclosure)
+- [12 Contact](#12-contact)
+- [13 Questions or issues](#13-questions-or-issues)
+- [14 License](#14-license)
+
+## 4 Documentation
+
+### Library panel and note embed
+
+The side panel works while you write in Live Preview or Source mode. The note embed renders in Reading view and Live Preview when the cursor is outside its code block. Source mode displays Markdown source.
+
+Put this block in any note:
 
 ````markdown
 ```letterboxd-library
 ```
 ````
 
-A Letterboxd public profile or a Letterboxd export is needed to populate a library. The plugin never asks for your Letterboxd password. The shareable package contains no account settings or film history.
+### Reviews and details
 
-## Import and refresh
+Film rows show the title, release year/runtime, your rating and the Letterboxd average. Dates and text reviews stay inside collapsed **Review** or **Details** sections. Review history is retained for films you have reviewed more than once. Extra ratings and external links are not repeated inside the review text.
 
-Use Settings → Letterboxd Library → Import export to choose the original Letterboxd export ZIP, or `watched.csv`. ZIP imports also read `ratings.csv`, entry dates from `diary.csv`, and the username from `profile.csv`. Review text, watchlists, deleted entries and private profile fields are not saved. A CSV import uses the username in settings.
+Import the complete ZIP to include older reviews. Live refresh can add reviews available in the recent RSS feed; that feed is not a complete review archive. Failed requests preserve saved history.
 
-Copy tries to refresh the public watched list before copying. Turn off **Refresh before copying** in the plugin settings to copy immediately. If refresh fails, Copy uses the saved library and shows “Saved list used”. Multiple requests share an existing refresh.
+### Copy and export
 
-Refresh reads the complete public watched list in newest-added order and the recent RSS feed to promote newly logged entries and rewatches. Export imports use their recorded entry dates. The RSS feed alone is never treated as the complete library. Older dates missing from a public profile are shown as unavailable; importing the full export fills the recorded dates. Letterboxd can block automated requests; failed refreshes preserve the saved library. Import a new export when that happens. Film details and community averages are cached; refresh checks cached metadata again after seven days.
+**Copy → Both / Movies / Shorts** copies plain `Title (Year)`, one film per line. It never includes reviews, ratings or extra metadata. Search and filters do not change these complete copy categories.
 
-Switching usernames hides the previous account's library until the new account is imported or refreshed. Importing a ZIP selects the username contained in that export.
+**Refresh before copying** is on by default. If Letterboxd blocks the request, Copy uses the saved library and says so. Disable the setting to copy immediately.
 
-## Display and data
+**Export CSV** offers independent switches for **Include ratings** and **Include text reviews**. Reviews are off by default. If selected, all stored reviews are included; review ratings follow the ratings switch. The complete saved library is exported to the vault, even offline. Existing files are never overwritten.
 
-The interface inherits Obsidian's fonts, colors and controls. Posters are optional, lazy-loaded at 70 × 105 pixels and displayed at 32 × 48 pixels. Poster requests go to Letterboxd's image CDN. Missing posters or ratings do not prevent browsing or copying.
+## 5 Keyboard shortcuts
 
-Shorts have a runtime of 40 minutes or less. Unknown runtimes remain unclassified. Copy → Both includes every film; copy output is plain `Title (Year)`, one per line. Search and sort do not change the copy categories.
+Use **Tab** and **Shift+Tab** to move between controls. Native disclosure controls open with **Enter** or **Space**. Search and filter controls work with the keyboard. Global Obsidian shortcuts remain available while using the embedded library.
 
-Stats count unique watched films. Hours add their known runtimes once, without counting rewatches. Rating charts and the personal average include rated films only. Clicking a chart bar opens its films in the library. Missing sort values stay at the end in either direction. Reset clears all filters and restores newest-logged-first order. A dash indicates an unavailable rating.
+## 6 Synced and local settings
 
-Settings and library data are stored locally in the plugin's `data.json`. Use **Export library → Export CSV** in settings to save the complete cached library to your vault, even offline or while a refresh runs. Export includes title, year, full release date where available, type, runtime, both ratings, and the film URL. Existing exports are never overwritten.
+The username, settings, film metadata and imported review history are stored in the plugin's `data.json`. If your vault sync service synchronizes plugin data, that service may also synchronize this file. The plugin does not provide its own cloud sync.
 
-Oldest/newest and release-date sorting use year, month and day when available. Year-only dates remain partial and are identified in Stats.
+Switching usernames hides the previous account's library until the new account is imported or refreshed. A ZIP import selects the username recorded in that export. No account history is bundled with the plugin.
 
-The plugin makes no background requests, uses no credentials or API keys, and does not send vault notes anywhere.
+## 7 Search and filters
 
-## Development
+Search by title or release year. Combine movie/short, rating and release-decade filters. Sort by logged date, title, release date, runtime, your rating or the community average, in either direction. Missing values stay at the end.
 
-No runtime dependencies or transpilation step. `npm run build` copies the readable `src/plugin.cjs` to the release `main.js` byte-for-byte, without transpilation or minification. Run `npm ci` and `npm run check` to run unit and browser-DOM tests. Set `LETTERBOXD_EXPORT` to a local ZIP path to include export checks. jsdom is a development-only test dependency.
+**Reset** clears filters and restores newest-logged-first order. Known log dates take precedence over partial ordering from public pages. Older log dates unavailable from Letterboxd are left missing; importing the full export fills recorded dates.
 
-Code is licensed under MIT; see [LICENSE](LICENSE). Logo terms are described in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
+## 8 Custom hotkeys
 
-The Letterboxd logo comes from the [official brand assets](https://letterboxd.com/about/brand/) and links to Letterboxd. This plugin is independent of Letterboxd.
+Assign shortcuts under **Settings → Hotkeys** by searching for **Letterboxd Library**. The plugin does not override your existing hotkeys.
+
+## 9 Commands
+
+| Command | Action |
+| --- | --- |
+| Open library | Open the library in the right sidebar. |
+| Open library note | Open or create the configured note. |
+| Refresh library | Read the public watched list and recent feed. |
+| Import export | Choose a Letterboxd export ZIP or watched CSV. |
+| Export library as CSV | Choose whether to include reviews and ratings, then save the full library. |
+
+## 10 Features
+
+- **Library:** small lazy-loaded posters, linked titles, rating columns and native controls.
+- **Reviews:** collapsed text review history, with dates inside details.
+- **Stats:** clickable rating and release-decade charts, runtime, format breakdown, oldest/newest and longest/shortest films.
+- **Import:** watched films, ratings, diary entry dates and text reviews from a Letterboxd ZIP. Watchlists, deleted entries and private profile fields are not saved.
+- **Copy:** title and year only, for movies, shorts or both.
+- **Export:** a complete CSV with optional ratings and review text.
+- **Appearance:** Obsidian fonts and theme colors, light/dark support, optional posters.
+
+Stats count unique watched films. Runtime adds known film lengths once, without counting rewatches. Shorts are 40 minutes or less. Unavailable runtimes remain unclassified; they are included in Copy → Both. Release-date comparisons use the full date when available; partial dates remain identified.
+
+## 11 Network and diagnostics disclosure
+
+- **letterboxd.com:** public watched pages, the recent RSS feed and film metadata. Refresh uses the complete watched list; RSS alone is never treated as the full library.
+- **boxd.it:** film and review links supplied in exports, resolving to Letterboxd.
+- **a.ltrbxd.com / s.ltrbxd.com:** optional poster thumbnails, requested only when displayed. Images are requested without a referrer.
+
+No telemetry, analytics, advertisements, server-side processing or background polling. Requests occur during refresh/import or when you use refresh-before-copy. Cached film details and community averages are checked again after seven days.
+
+Imported reviews are stored locally. They are not sent to Letterboxd. Import reads only the ZIP/CSV you choose; export creates a CSV inside the vault. Letterboxd can block automated requests, so ZIP import and cached copying remain available.
+
+## 12 Contact
+
+Maintained by [jasperdevs](https://github.com/jasperdevs).
+
+## 13 Questions or issues
+
+[Open an issue](https://github.com/jasperdevs/obsidian-letterboxd-library/issues) with your Obsidian version, operating system and steps to reproduce the problem. Do not attach account exports or private reviews unless you intend to share them publicly.
+
+For development, run `npm ci` and `npm run check`. `npm run build` reproduces `main.js` from `src/plugin.cjs`. Set `LETTERBOXD_EXPORT` to a local ZIP path to run additional export checks. jsdom is a development-only test dependency.
+
+## 14 License
+
+[MIT](LICENSE). Film posters belong to their respective rights holders; see [third-party notices](THIRD_PARTY_NOTICES.md). The plugin's film-reel mark is an original ImageGen-created asset. Letterboxd Library is independent of Letterboxd and Obsidian.
